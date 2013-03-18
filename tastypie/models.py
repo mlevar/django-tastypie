@@ -28,7 +28,8 @@ class ApiAccess(models.Model):
 
 if 'django.contrib.auth' in settings.INSTALLED_APPS:
     import uuid
-    from django.contrib.auth.models import User
+    # TODO: temporary solution, come up with a better one
+    from pipa.server.models import User
     
     class ApiKey(models.Model):
         user = models.OneToOneField(User, related_name='api_key')
