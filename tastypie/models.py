@@ -2,7 +2,7 @@ import hmac
 import time
 from django.conf import settings
 from django.db import models
-from tastypie.utils import now
+from tastypie.utils import now, get_user_model
 
 try:
     from hashlib import sha1
@@ -28,12 +28,13 @@ class ApiAccess(models.Model):
 
 if 'django.contrib.auth' in settings.INSTALLED_APPS:
     import uuid
-    # TODO: temporary solution, come up with a better one
-    from pipa.server.models import User
-    
+    from django.conf import settings
+
+    auth_user_model = get_user_model()
+
     class ApiKey(models.Model):
-        user = models.OneToOneField(User, related_name='api_key')
-        key = models.CharField(max_length=256, blank=True, default='', db_index=True)
+        user = models.OneToOneField(auth_user_model, related_name='api_key')
+        key = models.CharField(max_length=256, blank=True, default='')
         created = models.DateTimeField(default=now)
 
         def __unicode__(self):
