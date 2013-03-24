@@ -28,6 +28,9 @@ from tastypie.throttle import BaseThrottle
 from tastypie.utils import is_valid_jsonp_callback_value, dict_strip_unicode_keys, trailing_slash
 from tastypie.utils.mime import determine_format, build_content_type
 from tastypie.validation import Validation
+
+import json
+
 try:
     set
 except NameError:
@@ -1986,15 +1989,24 @@ class ModelResource(Resource):
                 # It's not a field we know about. Move along citizen.
                 continue
 
-            if len(filter_bits) and filter_bits[-1] in query_terms:
-                filter_type = filter_bits.pop()
+            if hasattr(self.Meta, 'mongo_filter'):
+                # try converting to json
+                try:
+                    value = json.loads(value)
+                except ValueError:
+                    pass
+                self.check_filtering(field_name, filter_type, [])
+                qs_filters[filter_expr] = value
+            else:
+                if len(filter_bits) and filter_bits[-1] in query_terms:
+                    filter_type = filter_bits.pop()
 
-            lookup_bits = self.check_filtering(field_name, filter_type, filter_bits)
-            value = self.filter_value_to_python(value, field_name, filters, filter_expr, filter_type)
+                lookup_bits = self.check_filtering(field_name, filter_type, filter_bits)
+                value = self.filter_value_to_python(value, field_name, filters, filter_expr, filter_type)
 
-            db_field_name = LOOKUP_SEP.join(lookup_bits)
-            qs_filter = "%s%s%s" % (db_field_name, LOOKUP_SEP, filter_type)
-            qs_filters[qs_filter] = value
+                db_field_name = LOOKUP_SEP.join(lookup_bits)
+                qs_filter = "%s%s%s" % (db_field_name, LOOKUP_SEP, filter_type)
+                qs_filters[qs_filter] = value
 
         return dict_strip_unicode_keys(qs_filters)
 
